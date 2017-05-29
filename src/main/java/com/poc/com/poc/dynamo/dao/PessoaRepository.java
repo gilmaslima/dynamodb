@@ -1,6 +1,7 @@
 package com.poc.com.poc.dynamo.dao;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -62,6 +63,7 @@ public class PessoaRepository {
 
 	public List<PessoaEntity> listaTodasPessoasPelaIdadeQuery(Integer idade) {
 
+		/*
 		Map<String, String> expressionAttributesNames = new HashMap<>();
 		expressionAttributesNames.put("#idade", "idade");
 		// expressionAttributesNames.put("#nome","nome");
@@ -77,27 +79,31 @@ public class PessoaRepository {
 				.withExpressionAttributeValues(expressionAttributeValues).withConsistentRead(false);
 
 		return mapper.query(PessoaEntity.class, expression);
-
+		*/return new ArrayList<PessoaEntity>();
 	}
 
 	public PessoaEntity retornaUltimoRegistroQuery() {
 
 		Map<String, String> expressionAttributesNames = new HashMap<>();
-		expressionAttributesNames.put("#dataDeInclusao", "dataDeInclusao");
+		//expressionAttributesNames.put("#dataDeInclusao", "dataDeInclusao");
+		expressionAttributesNames.put("#idade", "idade");
 
 		Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
-		expressionAttributeValues.put(":dataDeInclusao",
-				new AttributeValue().withN(Long.toString(new Date().getTime())));
-		
+		//expressionAttributeValues.put(":dataDeInclusao",
+		//		new AttributeValue().withN(Long.toString(new Date().getTime())));
+		expressionAttributeValues.put(":idade", new AttributeValue().withN("20"));
 		//Condition condition = new Condition();
 		//condition.withComparisonOperator(ComparisonOperator.LT)
 	    // .withAttributeValueList(new AttributeValue().withN(Long.toString(new Date().getTime())));
 		
 		
 		DynamoDBQueryExpression<PessoaEntity> expression = new DynamoDBQueryExpression<PessoaEntity>()
-				.withIndexName("dataIndex").withKeyConditionExpression("#dataDeInclusao = :dataDeInclusao")
+				//.withIndexName("idadeIndex").withKeyConditionExpression("#dataDeInclusao < :dataDeInclusao and #idade = :idade")
+				.withIndexName("idadeIndex").withKeyConditionExpression("#idade = :idade")
 				.withExpressionAttributeNames(expressionAttributesNames)
-				.withExpressionAttributeValues(expressionAttributeValues).withConsistentRead(false);
+				.withScanIndexForward(false)
+				.withExpressionAttributeValues(expressionAttributeValues).withConsistentRead(false)
+				.withLimit(1);
 
 		return mapper.query(PessoaEntity.class, expression).get(0);
 

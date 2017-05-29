@@ -24,8 +24,9 @@ public class PessoaEntity {
 	private Integer idade;
 
 
-    //@DynamoDBIndexRangeKey(globalSecondaryIndexName = "idadeIndex",attributeName = "dataDeInclusao")
-	@DynamoDBIndexHashKey(globalSecondaryIndexName = "dataIndex",attributeName = "dataDeInclusao")
+	
+    @DynamoDBIndexRangeKey(globalSecondaryIndexName = "idadeIndex",attributeName = "dataDeInclusao")
+	//@DynamoDBIndexHashKey(globalSecondaryIndexName = "dataIndex",attributeName = "dataDeInclusao")
 	@DynamoDBAttribute(attributeName="dataDeInclusao")
     private Long dataDeInclusao;
 

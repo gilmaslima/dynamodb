@@ -13,12 +13,11 @@ import org.springframework.context.annotation.Configuration;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.document.TableCollection;
-import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
 import com.amazonaws.services.dynamodbv2.model.DescribeTableResult;
 import com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndex;
@@ -28,7 +27,7 @@ import com.amazonaws.services.dynamodbv2.model.ListTablesResult;
 import com.amazonaws.services.dynamodbv2.model.Projection;
 import com.amazonaws.services.dynamodbv2.model.ProjectionType;
 import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
-import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
+import com.poc.com.poc.dynamo.entity.PessoaEntity;
 
 @Configuration
 public class DynamoDbConfiguration {
@@ -91,9 +90,38 @@ public class DynamoDbConfiguration {
 
 	private void createTable(AmazonDynamoDBClient dbClient, String tableName) throws InterruptedException {
 		
-		TableCreator tableCreator = new TableCreator(dbClient);
-		tableCreator.createPessoa();
-		
+		DynamoDBMapper dbMapper = new DynamoDBMapper(dbClient);
+
+        CreateTableRequest createTableRequest = dbMapper.generateCreateTableRequest(PessoaEntity.class);
+        createTableRequest.setTableName(tableName);
+        createTableRequest.setProvisionedThroughput(new ProvisionedThroughput(READ_WRITE_CAPACITY_UNIT,
+                READ_WRITE_CAPACITY_UNIT));
+        
+        List<GlobalSecondaryIndex> globalSecondaryIndices = new ArrayList<>();
+
+        ArrayList<KeySchemaElement> indexKeySchema = new ArrayList<>();
+
+        indexKeySchema.add(new KeySchemaElement()
+                .withAttributeName("idade")
+                .withKeyType(KeyType.HASH));  //Partition key
+        indexKeySchema.add(new KeySchemaElement()
+                .withAttributeName("dataDeInclusao")
+                .withKeyType(KeyType.RANGE));  //Sort key
+
+
+        GlobalSecondaryIndex idadeIndex = new GlobalSecondaryIndex()
+                .withIndexName("idadeIndex")
+                .withProvisionedThroughput(new ProvisionedThroughput()
+                        .withReadCapacityUnits((long) 10)
+                        .withWriteCapacityUnits((long) 1))
+                .withKeySchema(indexKeySchema)
+                .withProjection(new Projection().withProjectionType(ProjectionType.ALL));
+        globalSecondaryIndices.add(idadeIndex);
+
+        createTableRequest.setGlobalSecondaryIndexes(globalSecondaryIndices);
+        
+        DynamoDB dynamoDB = new DynamoDB(dbClient);
+        dynamoDB.createTable(createTableRequest).waitForActive();
 		
 		log.info("=========== Tabelas criadas com sucesso ===========");
 	}
